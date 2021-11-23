@@ -1,20 +1,20 @@
 #ifndef _STDES_H
 #define _STDES_H
 
-#define SIZE 500
+#define SIZE 10
 
 struct _ES_FICHIER{
 	int fd; 	// descripteur de fichier
-	char taumpon[SIZE];
+	char tampon[SIZE];
 	int place; 	//debut du taumpon
-	int taille; 	// nombre de l'elements dans le taumpon
+	int taille; 	// nombre d'octets disponibles dans le tampon
 	char mode;	//read ("L") / wrie ("E")
 };
 
 typedef struct _ES_FICHIER FICHIER;
 
-FICHIER *stdout;
-FICHIER *stderr;
+FICHIER *fstdout;
+FICHIER *fstderr;
 
 /* mode: 'L' = lecture, 'E' = écriture */
 FICHIER *ouvrir(const char *nom, char mode);
@@ -27,6 +27,10 @@ int fecriref (FICHIER *f, const char *format, ...);
 /* directly in stdout */
 int ecriref (const char *format, ...);
 int fliref (FICHIER *f, const char *format, ...);
+
+void copier(char *T1, char *T2, int nb_element);
+void decaler(FICHIER *f);
+char* convertir(int int_, char *s );
 
 #endif
 
