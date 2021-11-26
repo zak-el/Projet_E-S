@@ -48,7 +48,7 @@ void mem_write (FICHIER* f)
     count += lr;
   }
   ecriref ("Done\n");
-  vider (stdout);
+  vider (fstdout);
 }
 
 void mem_read (FICHIER* f, char* buff)
@@ -57,6 +57,21 @@ void mem_read (FICHIER* f, char* buff)
   int num;
   int lr;
   ecriref ("Reading file...\n");
+  
+  fstdout = (FICHIER*)malloc(sizeof(FICHIER));
+	fstdout->fd = 1 ;
+	fstdout->place = 0 ;
+	fstdout->taille = SIZE ;
+	fstdout->mode = 'E' ;
+	
+	fstderr = (FICHIER*)malloc(sizeof(FICHIER));
+	fstderr->fd = 2 ;
+	fstderr->place = 0 ;
+	fstderr->taille = SIZE ;
+	fstderr->mode = 'E' ;
+  
+  
+  
   do {
     num = RAND_NUM ;
 #ifdef DEBUG
@@ -72,7 +87,7 @@ void mem_read (FICHIER* f, char* buff)
     assert (count <= MEMORY_SIZE);
   } while (lr);
   ecriref ("Done\n");
-  vider (stdout);
+  vider (fstdout);
 }
 
 void mem_compare (char* ref, char *buff)
@@ -81,12 +96,12 @@ void mem_compare (char* ref, char *buff)
   ecriref ("Comparing memories...\n");
   for (i=0; i<MEMORY_SIZE; i++) {
     if (ref[i] != buff[i]) {
-      fecriref(stderr, "ERROR %c != %c at index %d\n", 
+      fecriref(fstderr, "ERROR %c != %c at index %d\n", 
           ref[i], buff[i], i);
     }
   }
   ecriref ("Done\n");
-  vider (stdout);
+  vider (fstdout);
 }
 
 

@@ -101,7 +101,10 @@ int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 	
 	//int nb_o = 0 ;
-	int n ;
+	int n = 0 ;
+	if(f == NULL )
+	  return -1 ;
+	
 	int p_taille =  taille*nbelem ;
 	if(f->mode == 'E'){
 		if(p_taille > SIZE ){
@@ -125,11 +128,12 @@ int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 				f->taille -= p_taille ;
 				f->place += p_taille ;
 			}
+			n = p_taille ;
 		}
 		
 	}
 	
-	return nbelem ;
+	return n/taille ;
 }
 
 int vider(FICHIER *f){
@@ -164,19 +168,17 @@ int fecriref (FICHIER *f, const char *format, ...){
 		        case 's':              /* string */
 		           s = va_arg(ap, char *);
 		           ecrire(s, 1, strlen(s), f);
-		           //printf("%s", s);
 		           break;
 		        case 'd':              /* int */
 		           d = (int) va_arg(ap, int);
-		           char *g = convertir(d, g) ;
+		           char *g = conv_int_to_char(d, g) ;
 		           ecrire(g, 1, strlen(g), f);
+		           free(g) ;
 		           
-		           //printf("inttttttttttttt %d", d);
 		           break;
 		        case 'c':              /* char */
 		           c = va_arg(ap, int);
 		           ecrire(&c, 1, 1, f);
-		           //printf("char %c", c);
 		           break;
 		        }
 		        *fr++ ;
@@ -191,7 +193,7 @@ int fecriref (FICHIER *f, const char *format, ...){
 	return 0;
 }
 
-char* convertir(int int_, char *s ){
+char* conv_int_to_char(int int_, char *s ){
 	s = malloc(20) ;
 	char *t = malloc(20) ;
 	char *debut ;
@@ -229,6 +231,19 @@ char* convertir(int int_, char *s ){
 	return s = t ;
 }
 
+int conv_char_to_int(char *s){
+  int n = strlen(s) ;
+  int p = 1 ;
+  int res = 0;
+  
+  for(int i = n-2; i >= 0; i--){
+    res += (s[i]-48)*p ;
+    p *= 10;
+  }
+  
+  return res ;
+}
+
 /* directly in stdout */
 int ecriref (const char *format, ...){
 	va_list ap;
@@ -238,37 +253,34 @@ int ecriref (const char *format, ...){
 	char c, *s;
 
 	va_start(ap, format);
-	while(*fr != '\0'){
+	while(*fr){
 		if(*fr == '%'){
 			*fr++ ;
 			switch (*fr) {
 		        case 's':              /* string */
 		           s = va_arg(ap, char *);
 		           ecrire(s, 1, strlen(s), fstdout);
-		           //printf("%s", s);
 		           break;
 		        case 'd':              /* int */
 		           d = (int) va_arg(ap, int);
-		           char *g = convertir(d, g) ;
+		           char *g = conv_int_to_char(d, g) ;
 		           ecrire(g, 1, strlen(g), fstdout);
-		           
-		           //printf("inttttttttttttt %d", d);
+		           free(g) ;
 		           break;
 		        case 'c':              /* char */
 		           c = va_arg(ap, int);
 		           ecrire(&c, 1, 1, fstdout);
-		           //printf("char %c", c);
 		           break;
 		        }
 		        *fr++ ;
            	 }
-           	 else
+           	 else{	
            	 	ecrire(fr, 1, 1, fstdout);
-           	 	*fr++;
+           	 	*fr++ ;
+           	 }
         }
         
         va_end(ap); 
-
 	return 0;
 }
 
@@ -277,7 +289,7 @@ int fliref (FICHIER *f, const char *format, ...){
 	char *fr = format ;
 	//char *fr = &frINT ;
 	int *d;
-	char *c, *s;
+	char *c, *s, g[20], *pt;
 
 	va_start(ap, format);
 	while(*fr != '\0'){
@@ -286,27 +298,36 @@ int fliref (FICHIER *f, const char *format, ...){
 			switch (*fr) {
 		        case 's':              /* string */
 		           s = va_arg(ap, char *);
-		           char pt ;
+		           pt = s;
 		           
-		           lire(&pt, 1, 1, f);
-		           if(pt == ' ' || pt == '\t' || pt == '\n' ){
-		           	lire(&pt, 1, 1, f);
-		           }
-		           while(pt != ' ' && pt != '\t' && pt != '\n' ){
-		           	
-		           	lire(&pt, 1, 1, f);
-		           	printf("|%c|", pt) ;
-		           	//printf("llllllllll %c llllllll", *pt) ;
-		           }
-		           	
-		           //*pt = '\0' ;
+		           lire(pt, 1, 1, f);
 		           
+		           while(*pt == ' ' || *pt == '\t' || *pt == '\n' ){
+		           	lire(pt, 1, 1, f);
+		           }
+		           
+		           while(*pt != ' ' && *pt != '\t' && *pt != '\n' ){
+		           	pt++;
+		           	lire(pt, 1, 1, f);
+		           }
+		           
+		           *pt = '\0' ;
 		           break;
 		        case 'd':              /* int */
-		           d = va_arg(ap, int*);
-		           char *g = convertir(d, g) ;
-		           lire(g, 1, strlen(g), f);
+		           pt = g ;
 		           
+		           d = va_arg(ap, int*);
+		           
+		           lire(pt, 1, 1, f);
+		           while(*pt < 48 || *pt >58){
+		           	lire(pt, 1, 1, f);
+		           }
+		           
+		           while(*pt > 47 && *pt < 58){
+		            pt++;
+		           	lire(pt, 1, 1, f);
+		           }
+		           *d = conv_char_to_int(g) ;
 		           break;
 		        case 'c':              /* char */
 		           c = va_arg(ap, char *);

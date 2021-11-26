@@ -30,7 +30,7 @@ int fliref (FICHIER *f, const char *format, ...);
 
 void copier(char *T1, char *T2, int nb_element);
 void decaler(FICHIER *f);
-char* convertir(int int_, char *s );
+char* conv_int_to_char(int int_, char *s );
 
 #endif
 
