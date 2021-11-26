@@ -1,5 +1,5 @@
 .SUFFIXES:
-.PRECIOS: %.o
+.PRECIOUS: %.o
 
 CC=gcc
 CFLAGS=-Wall -g 
@@ -14,7 +14,7 @@ all: test test-format test-rand
 	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
-	$(RM) *.o
+	$(RM) test test-format test-rand *.o
 	
 	
 	

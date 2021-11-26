@@ -54,47 +54,55 @@ int fermer(FICHIER*f){
 int lire(void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 	int n ;
 	int nb_o = 0; // nombre d'octets effictivement lus
+	int p_taille = taille*nbelem ;
 	if(f->mode == 'L'){
-		if(taille*nbelem > f->taille + SIZE ){
-			
+		if(p_taille > f->taille + SIZE ){
+			//printf("k1\n");
 			copier((f->tampon + f->place), (char*)p, f->taille) ;
-			n = read(f->fd, (char*)p + f->taille, taille*nbelem - f->taille );
+			n = read(f->fd, (char*)p + f->taille, p_taille - f->taille );
+			//printf("n = %d", n ) ;
 			nb_o = n + f->taille ;
-			f->taille = read(f->fd, f->tampon, SIZE);
+			f->taille = 0 ;
 			f->place = 0 ;
-			
 		}
 		else{
-			if(taille*nbelem  <= f->taille ){
-				copier((f->tampon + f->place), (char*)p, taille*nbelem) ;
-				f->place += taille*nbelem ;    
+			if(p_taille  <= f->taille ){
+			  //printf("k2\n");
+				copier((f->tampon + f->place), (char*)p, p_taille) ;
+				f->place += p_taille ;    
 				f->place = f->place % SIZE ;
-				f->taille -= taille*nbelem ;   
-				nb_o = taille*nbelem ; 	
+				f->taille -= p_taille ;   
+				nb_o = p_taille ; 	
 			}
-			else{
+			else{    
 			
-				if(f->taille != 0) 
+				if(f->taille != 0) {
 					decaler(f);
+				  
+				 }
+				//printf("#%s#\n", f->tampon ) ;
+				 
 				if( (n = read(f->fd, f->tampon + f->taille, SIZE - f->taille) ) == 0){
+				  //printf("k3\n");
 					copier(f->tampon + f->place, (char*)p, f->taille) ;
 					nb_o = f->taille ;
 					f->place = 0 ;
 					f->taille = 0 ;
 				}
 				else{
-					
-					nb_o = taille*nbelem<n ? taille*nbelem : n ;
+				  //printf("_%s_\n", f->tampon ) ;
+					//printf("k4\n");
+					f->taille += n ;
+					nb_o = p_taille < f->taille ? p_taille : f->taille ;
 					copier(f->tampon + f->place, (char*)p, nb_o) ;
 					f->place += nb_o ;
-					f->taille = n - nb_o ;
+					f->taille -= nb_o ;
 				}
-					
-					
-				
-			}
-		}
-	}
+		  }
+	  }
+	  //printf("(nb_o/taille ) = %d\n", (nb_o/taille ) ) ;
+	  *((char*)p + (nb_o/taille ) ) = '\0' ;
+  }
 	return nb_o/taille ;
 }
 
@@ -108,15 +116,16 @@ int ecrire(const void *p, unsigned int taille, unsigned int nbelem, FICHIER *f){
 	int p_taille =  taille*nbelem ;
 	if(f->mode == 'E'){
 		if(p_taille > SIZE ){
-		
+		  //printf("k1");
 			vider(f) ;
 			n = write(f->fd, p, p_taille) ;
-			f->taille = SIZE ;
-			f->place = 0 ;
+			//f->taille = SIZE ;
+			//f->place = 0 ;
 		
 		
 		}
 		else{
+		  //printf("k2");
 			if(p_taille <= f->taille ){
 				copier( (char*)p, f->tampon + f->place, p_taille) ;
 				f->taille -= p_taille ; //f->taile = 0
@@ -148,7 +157,7 @@ int vider(FICHIER *f){
 }
 
 void decaler(FICHIER *f){
-	copier((f->tampon + f->place), f->tampon, f->taille - f->place) ;
+	copier((f->tampon + f->place), f->tampon, f->taille) ;
 	f->place = 0 ;
 }
 
@@ -159,7 +168,8 @@ int fecriref (FICHIER *f, const char *format, ...){
 	//char *fr = &frINT ;
 	int d;
 	char c, *s;
-
+  int n = 0 ;
+  
 	va_start(ap, format);
 	while(*fr){
 		if(*fr == '%'){
@@ -168,17 +178,19 @@ int fecriref (FICHIER *f, const char *format, ...){
 		        case 's':              /* string */
 		           s = va_arg(ap, char *);
 		           ecrire(s, 1, strlen(s), f);
+		           n += strlen(s);
 		           break;
 		        case 'd':              /* int */
 		           d = (int) va_arg(ap, int);
 		           char *g = conv_int_to_char(d, g) ;
 		           ecrire(g, 1, strlen(g), f);
 		           free(g) ;
-		           
+		           n += strlen(g);
 		           break;
 		        case 'c':              /* char */
 		           c = va_arg(ap, int);
 		           ecrire(&c, 1, 1, f);
+		           n++ ;
 		           break;
 		        }
 		        *fr++ ;
@@ -186,11 +198,12 @@ int fecriref (FICHIER *f, const char *format, ...){
            	 else{	
            	 	ecrire(fr, 1, 1, f);
            	 	*fr++ ;
+           	 	n++ ;
            	 }
         }
         
         va_end(ap); 
-	return 0;
+	return n;
 }
 
 char* conv_int_to_char(int int_, char *s ){
@@ -236,7 +249,7 @@ int conv_char_to_int(char *s){
   int p = 1 ;
   int res = 0;
   
-  for(int i = n-2; i >= 0; i--){
+  for(int i = n-1; i >= 0; i--){
     res += (s[i]-48)*p ;
     p *= 10;
   }
@@ -251,7 +264,7 @@ int ecriref (const char *format, ...){
 	//char *fr = &frINT ;
 	int d;
 	char c, *s;
-
+  int n = 0 ;
 	va_start(ap, format);
 	while(*fr){
 		if(*fr == '%'){
@@ -260,16 +273,19 @@ int ecriref (const char *format, ...){
 		        case 's':              /* string */
 		           s = va_arg(ap, char *);
 		           ecrire(s, 1, strlen(s), fstdout);
+		           n += strlen(s) ;
 		           break;
 		        case 'd':              /* int */
 		           d = (int) va_arg(ap, int);
 		           char *g = conv_int_to_char(d, g) ;
 		           ecrire(g, 1, strlen(g), fstdout);
 		           free(g) ;
+		           n += strlen(g) ;
 		           break;
 		        case 'c':              /* char */
 		           c = va_arg(ap, int);
 		           ecrire(&c, 1, 1, fstdout);
+		           n++ ;
 		           break;
 		        }
 		        *fr++ ;
@@ -277,11 +293,12 @@ int ecriref (const char *format, ...){
            	 else{	
            	 	ecrire(fr, 1, 1, fstdout);
            	 	*fr++ ;
+           	 	n++;
            	 }
         }
         
         va_end(ap); 
-	return 0;
+	return n;
 }
 
 int fliref (FICHIER *f, const char *format, ...){
@@ -289,58 +306,64 @@ int fliref (FICHIER *f, const char *format, ...){
 	char *fr = format ;
 	//char *fr = &frINT ;
 	int *d;
-	char *c, *s, g[20], *pt;
-
+	char *c, *s, g[20], *pt, tmp;
+  int n = 0 ;
 	va_start(ap, format);
 	while(*fr != '\0'){
 		if(*fr == '%'){
 			*fr++ ;
 			switch (*fr) {
-		        case 's':              /* string */
-		           s = va_arg(ap, char *);
-		           pt = s;
-		           
-		           lire(pt, 1, 1, f);
-		           
-		           while(*pt == ' ' || *pt == '\t' || *pt == '\n' ){
-		           	lire(pt, 1, 1, f);
-		           }
-		           
-		           while(*pt != ' ' && *pt != '\t' && *pt != '\n' ){
-		           	pt++;
-		           	lire(pt, 1, 1, f);
-		           }
-		           
-		           *pt = '\0' ;
-		           break;
-		        case 'd':              /* int */
-		           pt = g ;
-		           
-		           d = va_arg(ap, int*);
-		           
-		           lire(pt, 1, 1, f);
-		           while(*pt < 48 || *pt >58){
-		           	lire(pt, 1, 1, f);
-		           }
-		           
-		           while(*pt > 47 && *pt < 58){
-		            pt++;
-		           	lire(pt, 1, 1, f);
-		           }
-		           *d = conv_char_to_int(g) ;
-		           break;
-		        case 'c':              /* char */
-		           c = va_arg(ap, char *);
-		           lire(c, 1, 1, f);
-		           break;
-		        }
-           	 }
-           	 *fr++;
-        }
+        case 's':              /* string */
+           s = va_arg(ap, char *);
+           pt = s;
+           
+           lire(pt, 1, 1, f);
+           
+           while(*pt == ' ' || *pt == '\t' || *pt == '\n' ){
+           	lire(pt, 1, 1, f);
+           }
+           
+           while(*pt != ' ' && *pt != '\t' && *pt != '\n' ){
+           	pt++;
+           	lire(pt, 1, 1, f);
+           }
+           
+           *pt = '\0' ;
+           n++ ;
+           break;
+        case 'd':              /* int */
+           pt = g ;
+           
+           d = va_arg(ap, int*);
+           
+           lire(pt, 1, 1, f);
+           while(*pt < 47 || *pt >58){ 
+            tmp = *pt ;
+           	lire(pt, 1, 1, f);
+           }
+           while(*pt > 47 && *pt < 58){
+            pt++;
+           	lire(pt, 1, 1, f);
+           }
+           *pt = '\0' ;
+           *d = conv_char_to_int(g) ;
+           if(tmp == '-' )
+            *d *= -1 ;
+           n++ ;
+           break;
+        case 'c':              /* char */
+           c = va_arg(ap, char *);
+           lire(c, 1, 1, f);
+           n++;
+           break;
+      }
+    }
+    *fr++;
+  }
         
-        va_end(ap); 
+  va_end(ap); 
 
-	return 0;
+	return n;
 }
 
 //copier nb_element de T1 dans T2

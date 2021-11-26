@@ -58,20 +58,6 @@ void mem_read (FICHIER* f, char* buff)
   int lr;
   ecriref ("Reading file...\n");
   
-  fstdout = (FICHIER*)malloc(sizeof(FICHIER));
-	fstdout->fd = 1 ;
-	fstdout->place = 0 ;
-	fstdout->taille = SIZE ;
-	fstdout->mode = 'E' ;
-	
-	fstderr = (FICHIER*)malloc(sizeof(FICHIER));
-	fstderr->fd = 2 ;
-	fstderr->place = 0 ;
-	fstderr->taille = SIZE ;
-	fstderr->mode = 'E' ;
-  
-  
-  
   do {
     num = RAND_NUM ;
 #ifdef DEBUG
@@ -108,6 +94,20 @@ void mem_compare (char* ref, char *buff)
 int main(int argc, char *argv[])
 {
   FICHIER *f;
+  
+  fstdout = (FICHIER*)malloc(sizeof(FICHIER));
+	fstdout->fd = 1 ;
+	fstdout->place = 0 ;
+	fstdout->taille = SIZE ;
+	fstdout->mode = 'E' ;
+	
+  fstderr = (FICHIER*)malloc(sizeof(FICHIER));
+	fstderr->fd = 2 ;
+	fstderr->place = 0 ;
+	fstderr->taille = SIZE ;
+	fstderr->mode = 'E' ;
+  
+  
   char* filename = "rand-file.txt";
 
   init_mem ();

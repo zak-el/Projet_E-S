@@ -41,6 +41,7 @@ int main (int argc, char **argv)
     int  d;
     char my_word[128];
     f2 = ouvrir (argv[2], 'L');
+    
     fliref (f2, "  test  %c end %s", &c, my_word);
     ecriref ("Read '%c' and '%s' from '%s'\n", c, my_word, argv[2]);
     fliref (f2, "end %d %s", &d, my_word);
